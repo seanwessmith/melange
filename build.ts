@@ -1,5 +1,3 @@
-import BunImageTransformPlugin from "bun-image-transform";
-
 await Bun.build({
   entrypoints: ["./src/popup/index.tsx", "./src/content/content_script.tsx"],
   outdir: "./dist",
@@ -11,6 +9,14 @@ const filesToCopy = [
   { src: "./public/manifest.json", dest: "./dist/manifest.json" },
   { src: "./public/background.ts", dest: "./dist/background.js" },
   { src: "./src/index.html", dest: "./dist/index.html" },
+  {
+    src: "./src/content/hacker_news.css",
+    dest: "./dist/content/hacker_news.css",
+  },
+  {
+    src: "./src/content/redux.css",
+    dest: "./dist/content/redux.css",
+  },
   // Add any additional files or directories you need to copy
 ];
 

@@ -1,0 +1,32 @@
+/*  #2CED73 */
+
+.token.keyword {
+  color: #dc62a6 !important;
+}
+.token.function {
+  color: #2ced73 !important;
+}
+.token.maybe-class-name {
+  color: #2ced73 !important;
+}
+.token.operator {
+  color: #dc62a6 !important;
+}
+.token.number {
+  color: #a77cdf !important;
+}
+.token.tag {
+  color: #dc62a6 !important;
+}
+.token.tag.attr-name {
+  color: #2ced73 !important;
+}
+.token.plain {
+  color: #a77cdf !important;
+}
+.token.comment {
+  color: #556596 !important;
+}
+[class*="codeBlockLines"] {
+  background-color: #24252f !important;
+}

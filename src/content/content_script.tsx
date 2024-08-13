@@ -9,9 +9,11 @@ const App: React.FC = () => {
   );
 };
 
-const rootDiv = document.getElementById("popup-root");
-if (!rootDiv) {
-  throw new Error("No root element found with the id 'popup-root'");
-}
-const root = createRoot(rootDiv);
-root.render(<App />);
+document.addEventListener("DOMContentLoaded", () => {
+  const rootDiv = document.getElementById("popup-root");
+  if (!rootDiv) {
+    throw new Error("No root element found with the id 'popup-root'");
+  }
+  const root = createRoot(rootDiv);
+  root.render(<App />);
+});
