@@ -22,10 +22,16 @@
   color: #2ced73 !important;
 }
 .token.plain {
-  color: #a77cdf !important;
+  color: #f3f3ec !important;
+}
+.token.string {
+  color: #eefa88 !important;
 }
 .token.comment {
   color: #556596 !important;
+}
+.token.literal-property.property {
+  color: #f3f3ec !important;
 }
 [class*="codeBlockLines"] {
   background-color: #24252f !important;
