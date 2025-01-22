@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Optimized Reading Layout</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        background-color: #fafafa;
+        color: #333333;
+        font-family: sans-serif;
+        font-size: 16px;
+        line-height: 1.6;
+        margin: 0;
+        padding: 2rem;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+
+      .reading-container {
+        max-width: 40em;
+        margin: 0 auto;
+      }
+
+      button {
+        display: inline-block;
+        background-color: #007bff;
+        color: #ffffff;
+        border: none;
+        border-radius: 4px;
+        padding: 0.5rem 1rem;
+        margin-bottom: 1rem;
+        cursor: pointer;
+        font-size: 1rem;
+      }
+
+      button:hover {
+        background-color: #0056b3;
+      }
+
+      .text-display {
+        white-space: pre-wrap;
+        padding: 1rem;
+        background-color: #ffffff;
+        border: 1px solid #dddddd;
+        border-radius: 4px;
+        min-height: 200px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="reading-container">
+      <button id="pasteButton">Paste Text from Clipboard</button>
+      <div id="textDisplay" class="text-display">
+        <p>Copy some text, then click the button above to paste it here!</p>
+      </div>
+    </div>
+
+    <!-- Move JavaScript to external file and load it with proper CSP attributes -->
+    <script src="page.js" defer></script>
+  </body>
+</html>
