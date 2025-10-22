@@ -1,9 +1,16 @@
 # Melange Ext
 
+**Instant Wikipedia-style dictionary popups for any word you highlight!**
+
+![Melange Ext Demo](screenshot.png)
+
 ## ✨ Features
 
 - 📖 **Dictionary Definitions** - Get instant word definitions from the Free Dictionary API
 - 🌐 **Wikipedia Integration** - See Wikipedia summaries with images for concepts, people, and places
+- ⚡ **Lightning Fast** - Appears instantly when you highlight text
+- 🎨 **Beautiful Design** - Wikipedia-inspired popup with text on the left and images on the right
+- 🌍 **Works Everywhere** - Active on all websites in Chrome
 
 ## 🚀 Installation
 
@@ -40,6 +47,19 @@ bun run build
    - Link to full Wikipedia article
 3. **Close with ESC** or click outside the popup
 
+## 🛠️ Development
+
+```bash
+# Install dependencies
+bun install
+
+# Development mode with hot reload
+bun run dev
+
+# Production build
+bun run build
+```
+
 ### Project Structure
 ```
 melange/
@@ -59,3 +79,42 @@ melange/
 │   └── logo.png                # Extension icon
 └── dist/                       # Built extension (generated)
 ```
+
+## 📦 Auto-Release
+
+Every push to `main` automatically creates a new release! The pre-push hook handles version bumping:
+
+```bash
+# Just commit and push - version auto-bumps!
+git commit -m "feat: add new feature"
+git push origin main
+
+# Or manually control the bump type
+bun run release        # patch: 1.0.0 → 1.0.1
+bun run release minor  # minor: 1.0.0 → 1.1.0
+bun run release major  # major: 1.0.0 → 2.0.0
+```
+
+GitHub Actions automatically builds and publishes the release with the packaged ZIP file.
+
+## 🔧 Technologies
+
+- **Bun** - Fast JavaScript runtime and bundler
+- **TypeScript** - Type-safe development
+- **React** - UI components
+- **Chrome Extension Manifest V3** - Latest extension format
+- **Free Dictionary API** - Word definitions
+- **Wikipedia API** - Contextual information and images
+- **Husky** - Git hooks for auto-versioning
+
+## 🤝 Contributing
+
+Contributions are welcome! Feel free to open issues or submit pull requests.
+
+## 📝 License
+
+MIT
+
+---
+
+Made with ❤️ using Bun and TypeScript

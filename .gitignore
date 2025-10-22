@@ -5,6 +5,9 @@ node_modules/
 dist/
 dist.zip
 
+# Keep screenshots for README
+!screenshot.png
+
 # Bun
 bun.lockb
 .bun/

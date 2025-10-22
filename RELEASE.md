@@ -1,111 +1,168 @@
 # Release Guide
 
-## Quick Release
+## 🚀 Auto-Release (Automatic)
 
-The easiest way to create a new release:
+The extension **automatically releases** when you push to `main`!
 
-```bash
-# For a patch release (1.0.0 → 1.0.1)
-bun run release
+### How It Works:
 
-# For a minor release (1.0.0 → 1.1.0)
-bun run release minor
-
-# For a major release (1.0.0 → 2.0.0)
-bun run release major
-```
-
-This script will:
-1. ✅ Bump the version in `package.json` and `public/manifest.json`
-2. ✅ Build the extension
-3. ✅ Create a git commit
-4. ✅ Create a git tag
-
-Then just push:
-```bash
-git push origin main --tags
-```
-
-## Manual Release
-
-If you prefer to do it manually:
-
-1. **Update version** in both:
+1. **Make your changes** and commit them
+2. **Bump the version** in both:
    - `package.json`
    - `public/manifest.json`
+3. **Push to main**
+4. **GitHub Actions automatically:**
+   - ✅ Builds the extension
+   - ✅ Creates a git tag
+   - ✅ Creates a GitHub Release
+   - ✅ Attaches the ZIP file
+   - ✅ Includes your commit messages in the release notes
 
-2. **Build the extension:**
-   ```bash
-   bun run build
-   ```
+### Quick Release Workflow:
 
-3. **Commit and tag:**
-   ```bash
-   git add package.json public/manifest.json
-   git commit -m "chore: bump version to X.Y.Z"
-   git tag vX.Y.Z
-   ```
+```bash
+# Use the release script to bump version and commit
+bun run release        # patch: 1.0.0 → 1.0.1
+bun run release minor  # minor: 1.0.0 → 1.1.0
+bun run release major  # major: 1.0.0 → 2.0.0
 
-4. **Push to GitHub:**
-   ```bash
-   git push origin main
-   git push origin vX.Y.Z
-   ```
+# Push to main (this triggers the release!)
+git push origin main
 
-## Auto-Release via GitHub Actions
+# That's it! Check GitHub releases in a minute
+```
 
-When you push a tag (e.g., `v1.0.0`), GitHub Actions will automatically:
+The `bun run release` script will:
+1. Bump version in `package.json` and `public/manifest.json`
+2. Build the extension locally (to verify it works)
+3. Create a commit with the version bump
+4. Wait for you to push
 
-1. 🔨 Build the extension
-2. 📦 Create a release on GitHub
-3. 📎 Attach `melange-ext-vX.Y.Z.zip` to the release
-4. 📝 Generate release notes
+### What Gets Released:
 
-The release will appear at: https://github.com/yourusername/melange/releases
+Every push to `main` triggers a release **EXCEPT:**
+- Changes to `*.md` files (documentation)
+- Changes to `.gitignore`
+- Changes to `LICENSE`
 
-## Version Numbering
+So you can update the README without triggering a release!
+
+## 📝 Version Numbering
 
 Follow [Semantic Versioning](https://semver.org/):
 
-- **Major** (X.0.0): Breaking changes
+- **Major** (X.0.0): Breaking changes, major new features
 - **Minor** (1.X.0): New features, backwards compatible
-- **Patch** (1.0.X): Bug fixes, backwards compatible
+- **Patch** (1.0.X): Bug fixes, small improvements
 
-## Testing Before Release
+### When to Bump:
 
-Before creating a release, always:
+- **Patch**: Bug fixes, typos, small tweaks
+- **Minor**: New features (like adding new dictionary sources)
+- **Major**: Breaking changes, complete redesigns
 
-1. Test locally:
-   ```bash
-   bun run build
-   # Load dist/ folder in Chrome
-   ```
+## 🔄 Manual Release (Without Script)
 
-2. Test on multiple websites
-3. Check console for errors
-4. Verify all features work
+If you prefer to do it manually:
 
-## Hotfix Release
+```bash
+# 1. Update versions manually
+# Edit package.json and public/manifest.json
+
+# 2. Commit the version change
+git add package.json public/manifest.json
+git commit -m "chore: bump version to 1.2.3"
+
+# 3. Push to main
+git push origin main
+
+# GitHub Actions handles the rest!
+```
+
+## 🧪 Testing Before Release
+
+**Important:** Test locally before pushing to main!
+
+```bash
+# 1. Build and test locally
+bun run build
+
+# 2. Load the dist/ folder in Chrome
+# Test all features
+
+# 3. Once verified, push to main
+git push origin main
+```
+
+## 🔧 Hotfix Workflow
 
 For urgent fixes:
 
 ```bash
-# Create a hotfix branch
-git checkout -b hotfix/1.0.1
-
-# Make your fix and commit
+# 1. Make the fix
 git add .
-git commit -m "fix: critical bug"
+git commit -m "fix: critical bug in dictionary popup"
 
-# Release
+# 2. Bump patch version
 bun run release patch
 
-# Push
-git push origin hotfix/1.0.1 --tags
-
-# Merge back to main
-git checkout main
-git merge hotfix/1.0.1
+# 3. Push (auto-releases!)
 git push origin main
 ```
 
+## 📦 What Happens on GitHub
+
+When you push to main:
+
+1. **Build Test** runs first (tests the build)
+2. **Release** workflow runs:
+   - Reads version from `public/manifest.json`
+   - Builds the extension
+   - Creates a git tag (e.g., `v1.0.1`)
+   - Creates GitHub Release with:
+     - Release notes with your commit messages
+     - `melange-ext-v1.0.1.zip` attachment
+     - Installation instructions
+
+Check your releases at:
+`https://github.com/yourusername/melange/releases`
+
+## 🎯 Pro Tips
+
+1. **Write good commit messages** - They appear in release notes!
+   ```bash
+   git commit -m "feat: add dark mode support"
+   git commit -m "fix: popup positioning on mobile"
+   git commit -m "docs: update installation guide"
+   ```
+
+2. **Batch small changes** - Multiple commits, one release
+   ```bash
+   git commit -m "fix: typo in tooltip"
+   git commit -m "fix: loading state color"
+   git commit -m "chore: bump version to 1.0.2"
+   git push origin main  # One release with all changes
+   ```
+
+3. **Test locally first** - Always build and test before pushing
+
+4. **Use conventional commits** - Makes release notes cleaner:
+   - `feat:` - New features
+   - `fix:` - Bug fixes
+   - `docs:` - Documentation
+   - `chore:` - Maintenance
+   - `refactor:` - Code improvements
+   - `perf:` - Performance improvements
+
+## ❓ Troubleshooting
+
+**Release failed?**
+- Check the Actions tab on GitHub
+- Make sure versions are updated in both files
+- Ensure the build passes locally first
+
+**Need to re-release the same version?**
+The workflow will automatically delete and recreate the release if it already exists.
+
+**Want to skip a release?**
+Only update `.md` files, or add `[skip ci]` to your commit message.

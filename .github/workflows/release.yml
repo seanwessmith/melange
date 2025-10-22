@@ -2,8 +2,12 @@ name: Release Extension
 
 on:
   push:
-    tags:
-      - 'v*.*.*'
+    branches:
+      - main
+    paths-ignore:
+      - '**.md'
+      - '.gitignore'
+      - 'LICENSE'
 
 jobs:
   build-and-release:
@@ -25,23 +29,65 @@ jobs:
         run: bun install
       
       - name: Build extension
-        run: bun run build
+        run: NODE_ENV=prod bun run build.ts
       
-      - name: Get version from tag
+      - name: Get version from manifest
         id: version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+        run: |
+          VERSION=$(node -p "require('./public/manifest.json').version")
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "Building version $VERSION"
+      
+      - name: Check if release exists
+        id: check_release
+        run: |
+          if gh release view "v${{ steps.version.outputs.VERSION }}" >/dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "Release v${{ steps.version.outputs.VERSION }} already exists, will delete it"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Delete existing release if it exists
+        if: steps.check_release.outputs.exists == 'true'
+        run: |
+          gh release delete "v${{ steps.version.outputs.VERSION }}" -y
+          git push origin :refs/tags/v${{ steps.version.outputs.VERSION }} || true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Rename dist.zip
         run: mv dist.zip melange-ext-v${{ steps.version.outputs.VERSION }}.zip
       
+      - name: Create git tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "v${{ steps.version.outputs.VERSION }}" -m "Release v${{ steps.version.outputs.VERSION }}"
+          git push origin "v${{ steps.version.outputs.VERSION }}"
+      
+      - name: Get commit messages
+        id: commits
+        run: |
+          COMMITS=$(git log $(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")..HEAD --pretty=format:"- %s" || echo "- Initial release")
+          echo "COMMITS<<EOF" >> $GITHUB_OUTPUT
+          echo "$COMMITS" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+      
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
+          tag_name: v${{ steps.version.outputs.VERSION }}
           name: Melange Ext v${{ steps.version.outputs.VERSION }}
           body: |
             ## Melange Ext v${{ steps.version.outputs.VERSION }}
             
             **Instant Wikipedia-style dictionary popups for any word you highlight!**
+            
+            ### What's Changed
+            ${{ steps.commits.outputs.COMMITS }}
             
             ### Features
             - 📖 Dictionary definitions from Free Dictionary API
@@ -59,6 +105,10 @@ jobs:
             
             ### Usage
             Highlight any word on any webpage to see an instant dictionary popup!
+            
+            ---
+            
+            **Full Changelog**: https://github.com/${{ github.repository }}/commits/v${{ steps.version.outputs.VERSION }}
           files: |
             melange-ext-v${{ steps.version.outputs.VERSION }}.zip
           draft: false

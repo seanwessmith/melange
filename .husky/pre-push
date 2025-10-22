@@ -1,0 +1,47 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Get the current branch
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+
+# Only run on main branch
+if [ "$BRANCH" != "main" ]; then
+  exit 0
+fi
+
+echo "🔍 Checking if version needs to be bumped..."
+
+# Get current version from manifest
+CURRENT_VERSION=$(node -p "require('./public/manifest.json').version")
+
+# Get the last tag version (if any)
+LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+LAST_VERSION=${LAST_TAG#v}
+
+# Check if version has changed
+if [ "$CURRENT_VERSION" = "$LAST_VERSION" ]; then
+  echo ""
+  echo "⚠️  Version hasn't been bumped since last release!"
+  echo "   Current version: $CURRENT_VERSION"
+  echo "   Last release: $LAST_VERSION"
+  echo ""
+  echo "🤖 Auto-bumping patch version..."
+  
+  # Auto-bump patch version
+  bun run release.ts patch --no-commit
+  
+  # Stage the version changes
+  git add package.json public/manifest.json
+  
+  # Amend the last commit with version changes
+  git commit --amend --no-edit
+  
+  NEW_VERSION=$(node -p "require('./public/manifest.json').version")
+  echo "✅ Version bumped: $CURRENT_VERSION → $NEW_VERSION"
+  echo ""
+else
+  echo "✅ Version already bumped: $LAST_VERSION → $CURRENT_VERSION"
+fi
+
+exit 0
+

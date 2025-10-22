@@ -2,22 +2,25 @@
 
 /**
  * Release script to create a new version tag and push it
- * Usage: bun run release.ts [major|minor|patch]
+ * Usage: bun run release.ts [major|minor|patch] [--no-commit]
  */
 
 import { $ } from "bun";
 import { readFile, writeFile } from "node:fs/promises";
 
 const args = process.argv.slice(2);
-const bumpType = args[0] || "patch"; // default to patch
+const bumpType = args.find(arg => !arg.startsWith('--')) || "patch";
+const noCommit = args.includes('--no-commit');
 
 if (!["major", "minor", "patch"].includes(bumpType)) {
-  console.error("Usage: bun run release.ts [major|minor|patch]");
+  console.error("Usage: bun run release.ts [major|minor|patch] [--no-commit]");
   process.exit(1);
 }
 
 // Read current version from package.json
-const packageJson = JSON.parse(await readFile("package.json", "utf-8"));
+const packageJson = JSON.parse(
+  await readFile("package.json", "utf-8")
+);
 const currentVersion = packageJson.version;
 
 // Parse version
@@ -57,18 +60,22 @@ await writeFile(
 );
 console.log("✓ Updated public/manifest.json");
 
+// Exit here if --no-commit flag is set
+if (noCommit) {
+  console.log("\n✅ Version updated (no commit created)");
+  process.exit(0);
+}
+
 // Build the extension
 console.log("\n🔨 Building extension...");
-await $`bun run build`;
+await $`rm -rf dist`.quiet();
+await $`NODE_ENV=prod bun run build.ts`;
 
 // Git operations
-console.log("\n📝 Creating git commit and tag...");
+console.log("\n📝 Creating git commit...");
 await $`git add package.json public/manifest.json`;
 await $`git commit -m "chore: bump version to ${newVersion}"`;
-await $`git tag v${newVersion}`;
 
 console.log("\n✅ Release prepared!");
-console.log(
-  `\n🚀 To publish, run: git push origin main && git push origin v${newVersion}`
-);
-console.log(`\nOr push everything at once: git push origin main --tags`);
+console.log(`\n🚀 To publish, run: git push origin main`);
+console.log(`\nThe release will be automatically created by GitHub Actions!`);
