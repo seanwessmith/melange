@@ -65,6 +65,9 @@ class DictionaryPopup {
 
     this.selectedText = text;
 
+    // Get surrounding context for better definition matching
+    const context = this.getContext(selection);
+
     // Cancel previous fetch if still running
     if (this.controller) {
       this.controller.abort();
@@ -82,7 +85,7 @@ class DictionaryPopup {
       ]);
 
       // Show popup with data
-      this.showPopup(wikiData, dictData, e);
+      this.showPopup(wikiData, dictData, context, e);
     } catch (error) {
       if (error instanceof Error && error.name === "AbortError") {
         return; // Request was cancelled, do nothing
@@ -187,9 +190,61 @@ class DictionaryPopup {
     this.positionPopup(e);
   }
 
+  private getContext(selection: Selection | null): string {
+    if (!selection || selection.rangeCount === 0) return "";
+
+    try {
+      const range = selection.getRangeAt(0);
+      const container = range.commonAncestorContainer;
+
+      // Get the parent element text
+      const parentElement =
+        container.nodeType === Node.TEXT_NODE
+          ? container.parentElement
+          : (container as Element);
+
+      if (!parentElement) return "";
+
+      // Get surrounding sentence/paragraph (up to 200 chars on each side)
+      const fullText = parentElement.textContent || "";
+      const selectedText = selection.toString();
+      const selectedIndex = fullText.indexOf(selectedText);
+
+      if (selectedIndex === -1) return "";
+
+      // Extract context around the selection
+      const start = Math.max(0, selectedIndex - 200);
+      const end = Math.min(
+        fullText.length,
+        selectedIndex + selectedText.length + 200
+      );
+      let context = fullText.substring(start, end).trim();
+
+      // Try to break at sentence boundaries
+      if (start > 0) {
+        const sentenceStart = context.search(/[.!?]\s+/);
+        if (sentenceStart > 0 && sentenceStart < 100) {
+          context = context.substring(sentenceStart + 2);
+        }
+      }
+
+      if (end < fullText.length) {
+        const sentenceEnd = context.search(/[.!?](?=\s|$)/);
+        if (sentenceEnd > context.length - 100 && sentenceEnd > 0) {
+          context = context.substring(0, sentenceEnd + 1);
+        }
+      }
+
+      return context;
+    } catch (error) {
+      return "";
+    }
+  }
+
   private showPopup(
     wikiData: WikipediaExtract | null,
     dictData: DictionaryDefinition | null,
+    context: string,
     e: MouseEvent | KeyboardEvent
   ) {
     // If no data from either source, don't show popup
@@ -222,21 +277,56 @@ class DictionaryPopup {
 
     content += "</h3>";
 
-    // Dictionary definition first (if available)
-    if (dictData?.meanings && dictData.meanings.length > 0) {
-      const firstMeaning = dictData.meanings[0];
-      const firstDef = firstMeaning.definitions[0];
-
+    // Show context if available
+    if (context && context.length > this.selectedText.length + 20) {
+      const contextWithHighlight = context.replace(
+        new RegExp(`\\b(${this.escapeRegex(this.selectedText)})\\b`, "gi"),
+        "<strong>$1</strong>"
+      );
       content += `
-        <div class="melange-popup-dict">
-          <span class="melange-popup-pos">${this.escapeHtml(
-            firstMeaning.partOfSpeech
-          )}</span>
-          <p class="melange-popup-definition">${this.escapeHtml(
-            firstDef.definition
-          )}</p>
+        <div class="melange-popup-context">
+          <em>"${contextWithHighlight}"</em>
         </div>
       `;
+    }
+
+    // Dictionary definitions (show multiple for context)
+    if (dictData?.meanings && dictData.meanings.length > 0) {
+      // Show up to 3 definitions from different parts of speech if available
+      const meaningsToShow = dictData.meanings.slice(0, 3);
+
+      for (const meaning of meaningsToShow) {
+        const definitionsToShow = meaning.definitions.slice(0, 2); // Max 2 definitions per part of speech
+
+        content += `
+          <div class="melange-popup-dict">
+            <span class="melange-popup-pos">${this.escapeHtml(
+              meaning.partOfSpeech
+            )}</span>
+        `;
+
+        for (let i = 0; i < definitionsToShow.length; i++) {
+          const def = definitionsToShow[i];
+          const defNumber = definitionsToShow.length > 1 ? `${i + 1}. ` : "";
+
+          content += `
+            <p class="melange-popup-definition">${defNumber}${this.escapeHtml(
+            def.definition
+          )}</p>
+          `;
+
+          // Show example if available
+          if (def.example) {
+            content += `
+              <p class="melange-popup-example"><em>e.g., "${this.escapeHtml(
+                def.example
+              )}"</em></p>
+            `;
+          }
+        }
+
+        content += `</div>`;
+      }
     }
 
     // Wikipedia extract
@@ -353,6 +443,10 @@ class DictionaryPopup {
     const div = document.createElement("div");
     div.textContent = text;
     return div.innerHTML;
+  }
+
+  private escapeRegex(text: string): string {
+    return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   }
 }
 
