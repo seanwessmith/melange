@@ -1,0 +1,68 @@
+name: Release Extension
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+      
+      - name: Install dependencies
+        run: bun install
+      
+      - name: Build extension
+        run: bun run build
+      
+      - name: Get version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+      
+      - name: Rename dist.zip
+        run: mv dist.zip melange-ext-v${{ steps.version.outputs.VERSION }}.zip
+      
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: Melange Ext v${{ steps.version.outputs.VERSION }}
+          body: |
+            ## Melange Ext v${{ steps.version.outputs.VERSION }}
+            
+            **Instant Wikipedia-style dictionary popups for any word you highlight!**
+            
+            ### Features
+            - 📖 Dictionary definitions from Free Dictionary API
+            - 🌐 Wikipedia summaries and images
+            - ⚡ Instant popups on text selection
+            - 🎨 Beautiful Wikipedia-inspired design
+            
+            ### Installation
+            1. Download `melange-ext-v${{ steps.version.outputs.VERSION }}.zip`
+            2. Unzip the file
+            3. Go to `chrome://extensions/`
+            4. Enable "Developer mode"
+            5. Click "Load unpacked"
+            6. Select the `dist` folder
+            
+            ### Usage
+            Highlight any word on any webpage to see an instant dictionary popup!
+          files: |
+            melange-ext-v${{ steps.version.outputs.VERSION }}.zip
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
