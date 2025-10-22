@@ -27,6 +27,12 @@
     {
       "matches": ["https://www.chess.com/*"],
       "js": ["content/chess_com.js"]
+    },
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content/dictionary.js"],
+      "css": ["styles/dictionary.css"],
+      "run_at": "document_idle"
     }
   ],
   "icons": {
