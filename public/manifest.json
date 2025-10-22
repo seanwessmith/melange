@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Melange",
-  "version": "1.0",
-  "description": "A script to always be one step beyond logic",
+  "name": "Melange Ext",
+  "version": "1.0.0",
+  "description": "Instant Wikipedia-style dictionary popups for any word you highlight",
   "background": {
     "service_worker": "background.js"
   },
