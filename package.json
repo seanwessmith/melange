@@ -1,6 +1,6 @@
 {
   "name": "melange-ext",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Instant Wikipedia-style dictionary popups for any word you highlight",
   "module": "index.ts",
   "type": "module",

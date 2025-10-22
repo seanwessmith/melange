@@ -51,7 +51,7 @@ class DictionaryPopup {
 
       // Use a small, fast model (Phi-2 or similar)
       this.engine = await webllm.CreateMLCEngine(
-        "Phi-2-q4f16_1-MLC", // Small 2.7B parameter model, good for quick inference
+        "phi-2-q4f16_1-MLC", // Small 2.7B parameter model, good for quick inference
         {
           initProgressCallback: (progress) => {
             console.log(`[Melange] Loading model: ${progress.text}`);
