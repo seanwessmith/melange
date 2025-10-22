@@ -6,11 +6,13 @@
 
 ## ✨ Features
 
+- 🤖 **AI-Powered Definition Selection** - Uses WebLLM to intelligently pick the most relevant definition based on context
 - 📖 **Dictionary Definitions** - Get instant word definitions from the Free Dictionary API
 - 🌐 **Wikipedia Integration** - See Wikipedia summaries with images for concepts, people, and places
 - ⚡ **Lightning Fast** - Appears instantly when you highlight text
 - 🎨 **Beautiful Design** - Wikipedia-inspired popup with text on the left and images on the right
 - 🌍 **Works Everywhere** - Active on all websites in Chrome
+- 🧠 **Context-Aware** - Understands the sentence to show the right definition (e.g., "industries" as diligence vs. manufacturing)
 
 ## 🚀 Installation
 
@@ -99,6 +101,7 @@ GitHub Actions automatically builds and publishes the release with the packaged 
 
 ## 🔧 Technologies
 
+- **WebLLM** - In-browser AI (Phi-2 model) for intelligent definition selection
 - **Bun** - Fast JavaScript runtime and bundler
 - **TypeScript** - Type-safe development
 - **React** - UI components
@@ -106,6 +109,7 @@ GitHub Actions automatically builds and publishes the release with the packaged 
 - **Free Dictionary API** - Word definitions
 - **Wikipedia API** - Contextual information and images
 - **Husky** - Git hooks for auto-versioning
+- **WebGPU** - Hardware acceleration for AI inference
 
 ## 🤝 Contributing
 

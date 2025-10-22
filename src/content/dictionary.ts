@@ -1,7 +1,10 @@
 /**
  * Dictionary Content Script
  * Shows Wikipedia-style popup on text selection with definition and image
+ * Uses WebLLM to intelligently select the most relevant definition based on context
  */
+
+import * as webllm from "@mlc-ai/web-llm";
 
 // Types for API responses
 interface WikipediaExtract {
@@ -31,9 +34,38 @@ class DictionaryPopup {
   private popup: HTMLDivElement | null = null;
   private selectedText: string = "";
   private controller: AbortController | null = null;
+  private engine: webllm.MLCEngineInterface | null = null;
+  private isLoadingModel: boolean = false;
 
   constructor() {
     this.init();
+    this.initLLM();
+  }
+
+  private async initLLM() {
+    if (this.isLoadingModel || this.engine) return;
+
+    try {
+      this.isLoadingModel = true;
+      console.log("[Melange] Initializing WebLLM...");
+
+      // Use a small, fast model (Phi-2 or similar)
+      this.engine = await webllm.CreateMLCEngine(
+        "Phi-2-q4f16_1-MLC", // Small 2.7B parameter model, good for quick inference
+        {
+          initProgressCallback: (progress) => {
+            console.log(`[Melange] Loading model: ${progress.text}`);
+          },
+        }
+      );
+
+      console.log("[Melange] WebLLM ready!");
+    } catch (error) {
+      console.error("[Melange] Failed to load WebLLM:", error);
+      this.engine = null;
+    } finally {
+      this.isLoadingModel = false;
+    }
   }
 
   private init() {
@@ -241,7 +273,7 @@ class DictionaryPopup {
     }
   }
 
-  private showPopup(
+  private async showPopup(
     wikiData: WikipediaExtract | null,
     dictData: DictionaryDefinition | null,
     context: string,
@@ -277,52 +309,32 @@ class DictionaryPopup {
 
     content += "</h3>";
 
-    // Show context if available
-    if (context && context.length > this.selectedText.length + 20) {
-      const contextWithHighlight = context.replace(
-        new RegExp(`\\b(${this.escapeRegex(this.selectedText)})\\b`, "gi"),
-        "<strong>$1</strong>"
-      );
-      content += `
-        <div class="melange-popup-context">
-          <em>"${contextWithHighlight}"</em>
-        </div>
-      `;
-    }
-
-    // Dictionary definitions (show multiple for context)
+    // Dictionary definitions - use AI to select best one if context available
     if (dictData?.meanings && dictData.meanings.length > 0) {
-      // Show up to 3 definitions from different parts of speech if available
-      const meaningsToShow = dictData.meanings.slice(0, 3);
+      const bestDefinition = await this.selectBestDefinition(
+        this.selectedText,
+        context,
+        dictData.meanings
+      );
 
-      for (const meaning of meaningsToShow) {
-        const definitionsToShow = meaning.definitions.slice(0, 2); // Max 2 definitions per part of speech
-
+      if (bestDefinition) {
         content += `
           <div class="melange-popup-dict">
             <span class="melange-popup-pos">${this.escapeHtml(
-              meaning.partOfSpeech
+              bestDefinition.partOfSpeech
             )}</span>
+            <p class="melange-popup-definition">${this.escapeHtml(
+              bestDefinition.definition
+            )}</p>
         `;
 
-        for (let i = 0; i < definitionsToShow.length; i++) {
-          const def = definitionsToShow[i];
-          const defNumber = definitionsToShow.length > 1 ? `${i + 1}. ` : "";
-
+        // Show example if available
+        if (bestDefinition.example) {
           content += `
-            <p class="melange-popup-definition">${defNumber}${this.escapeHtml(
-            def.definition
-          )}</p>
+            <p class="melange-popup-example"><em>e.g., "${this.escapeHtml(
+              bestDefinition.example
+            )}"</em></p>
           `;
-
-          // Show example if available
-          if (def.example) {
-            content += `
-              <p class="melange-popup-example"><em>e.g., "${this.escapeHtml(
-                def.example
-              )}"</em></p>
-            `;
-          }
         }
 
         content += `</div>`;
@@ -447,6 +459,83 @@ class DictionaryPopup {
 
   private escapeRegex(text: string): string {
     return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+
+  private async selectBestDefinition(
+    word: string,
+    context: string,
+    meanings: Array<{
+      partOfSpeech: string;
+      definitions: Array<{
+        definition: string;
+        example?: string;
+      }>;
+    }>
+  ): Promise<{
+    partOfSpeech: string;
+    definition: string;
+    example?: string;
+  } | null> {
+    // If no context or LLM not ready, return first definition
+    if (!context || !this.engine) {
+      const firstMeaning = meanings[0];
+      return {
+        partOfSpeech: firstMeaning.partOfSpeech,
+        definition: firstMeaning.definitions[0].definition,
+        example: firstMeaning.definitions[0].example,
+      };
+    }
+
+    try {
+      // Flatten all definitions with their metadata
+      const allDefinitions = meanings.flatMap((meaning) =>
+        meaning.definitions.map((def, idx) => ({
+          id: `${meaning.partOfSpeech}-${idx}`,
+          partOfSpeech: meaning.partOfSpeech,
+          definition: def.definition,
+          example: def.example,
+        }))
+      );
+
+      // Create prompt for LLM
+      const definitionsText = allDefinitions
+        .map((d, i) => `${i + 1}. [${d.partOfSpeech}] ${d.definition}`)
+        .join("\n");
+
+      const prompt = `Given the context: "${context}"
+
+Which definition of "${word}" is most relevant?
+
+${definitionsText}
+
+Reply with ONLY the number (1-${allDefinitions.length}) of the best definition. No explanation.`;
+
+      // Get LLM response
+      const response = await this.engine.chat.completions.create({
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.1,
+        max_tokens: 5,
+      });
+
+      const answer = response.choices[0]?.message?.content?.trim();
+      const selectedIndex = parseInt(answer || "1") - 1;
+
+      // Return selected definition or first if parsing fails
+      if (selectedIndex >= 0 && selectedIndex < allDefinitions.length) {
+        return allDefinitions[selectedIndex];
+      }
+
+      return allDefinitions[0];
+    } catch (error) {
+      console.error("[Melange] Error selecting definition:", error);
+      // Fallback to first definition
+      const firstMeaning = meanings[0];
+      return {
+        partOfSpeech: firstMeaning.partOfSpeech,
+        definition: firstMeaning.definitions[0].definition,
+        example: firstMeaning.definitions[0].example,
+      };
+    }
   }
 }
 

@@ -64,28 +64,6 @@
   margin-left: 6px;
 }
 
-.melange-popup-context {
-  margin: 8px 0 12px 0;
-  padding: 8px 12px;
-  background: #f8f9fa;
-  border-left: 3px solid #a2a9b1;
-  border-radius: 2px;
-  font-size: 13px;
-  line-height: 1.5;
-  color: #54595d;
-}
-
-.melange-popup-context em {
-  font-style: normal;
-}
-
-.melange-popup-context strong {
-  font-weight: 600;
-  color: #202122;
-  background: #fef6e7;
-  padding: 0 2px;
-}
-
 .melange-popup-dict {
   margin-bottom: 12px;
   padding: 8px 0;
